@@ -219,6 +219,11 @@ local function verbWord(stop)
     return stop.verb == "accept" and "Accept" or "Turn in"
 end
 
+local function lowLevelTitle(stop)
+    if ns.GetDB().markLowLevel and ns.isLowLevelQuest(stop.id) then return stop.title .. " " .. ns.LOW_LEVEL_TAG end
+    return stop.title
+end
+
 local function buildHint(zgv, found, instance)
     local best = found[1]
     local stops, keys = {}, {}
@@ -238,7 +243,7 @@ local function buildHint(zgv, found, instance)
         atlas = first.verb == "accept" and "QuestNormal" or "QuestTurnin",
     }
     if #stops == 1 then
-        hint.heading = "Side quest: " .. first.title
+        hint.heading = "Side quest: " .. lowLevelTitle(first)
         hint.detail = ("%s%s, %s%s"):format(verbWord(first), first.npc and (" at " .. first.npc) or "", walkText(best), suffix)
         hint.waypoint = verbWord(first) .. " " .. first.title
     else
@@ -250,7 +255,7 @@ local function buildHint(zgv, found, instance)
         hint.rows = {}
         for _, stop in ipairs(stops) do
             hint.rows[#hint.rows + 1] = {
-                verb = verbWord(stop), title = stop.title,
+                verb = verbWord(stop), title = lowLevelTitle(stop),
                 map = stop.map, x = stop.x, y = stop.y, waypoint = verbWord(stop) .. " " .. stop.title,
             }
         end

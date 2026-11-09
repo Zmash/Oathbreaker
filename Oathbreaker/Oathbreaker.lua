@@ -261,6 +261,7 @@ local SETTINGS = {
     { key = "guideFinder", title = "Quest log guide finder", text = "Show which Zygor guides contain the selected quest" },
     { key = "guideCheck", title = "Guide check", text = "Suggest the next leveling guide once you have outleveled yours" },
     { key = "sideQuests", title = "Side quests", text = "Hint at nearby quests from the guides you take along" },
+    { key = "markLowLevel", title = "Mark low-level quests", text = "Add (low level) to grey quests in Zygor's steps and in hints" },
     { key = "updateNotice", title = "Update notice", text = "Tell me when someone I play with runs a newer Oathbreaker" },
     { key = "showMinimap", title = "Minimap button", text = "Show the Oathbreaker button on the minimap" },
 }
@@ -886,6 +887,52 @@ local function questieLevelMet(questID)
     return not (ok and type(required) == "number" and required > UnitLevel("player"))
 end
 
+-- Grey ("trivial") quests: worth little XP, easy to overlook in Zygor's step list.
+-- Needs QuestieDB for the quest level; without it nothing gets marked.
+ns.LOW_LEVEL_TAG = "|cff9d9d9d(low level)|r"
+local lowLevelCache, lowLevelFor = {}, nil
+
+function ns.isLowLevelQuest(questID)
+    local level = UnitLevel("player")
+    if lowLevelFor ~= level then lowLevelCache, lowLevelFor = {}, level end
+    local cached = lowLevelCache[questID]
+    if cached ~= nil then return cached end
+    local result = false
+    local quests = questieQuests()
+    if quests then
+        local ok, questLevel = pcall(function()
+            return quests.Exists(questID) and quests.Get(questID, "questLevel")
+        end)
+        if ok and type(questLevel) == "number" and questLevel > 0 then
+            local range = GetQuestGreenRange and GetQuestGreenRange() or 8
+            result = questLevel < level - range
+        end
+    end
+    lowLevelCache[questID] = result
+    return result
+end
+
+local MARKED_ACTIONS = { accept = true, turnin = true }
+
+local function markGoalText(goal, text, ...)
+    if db.markLowLevel and type(text) == "string" and text ~= "" and MARKED_ACTIONS[goal.action]
+        and goal.questid and ns.isLowLevelQuest(goal.questid) then
+        text = text .. " " .. ns.LOW_LEVEL_TAG
+    end
+    return text, ...
+end
+
+function ns.InstallLowLevelMarker(zgv)
+    local proto = zgv and zgv.GoalProto
+    if not (proto and proto.GetText) or proto.oathbreakerMarked then return end
+    local original = proto.GetText
+    proto.oathbreakerMarked = true
+    proto.GetText = function(self, showcompleteness, brief, showtotals, nocolor)
+        if nocolor then return original(self, showcompleteness, brief, showtotals, nocolor) end
+        return markGoalText(self, original(self, showcompleteness, brief, showtotals, nocolor))
+    end
+end
+
 -- True when Questie knows the quest and no race of your faction may take it (Neutral: never)
 function ns.isOtherFactionQuest(questID)
     local faction = UnitFactionGroup("player")
@@ -959,6 +1006,7 @@ events:SetScript("OnEvent", function(_, event, name)
         if db.sideQuests == nil then db.sideQuests = true end
         if db.guideCheck == nil then db.guideCheck = true end
         if db.updateNotice == nil then db.updateNotice = true end
+        if db.markLowLevel == nil then db.markLowLevel = true end
         db.guideCheckStay = db.guideCheckStay or {}
         for _, key in ipairs({ "offerDungeons", "hintQuests", "hintFlights" }) do
             if db[key] == nil then db[key] = db.hints ~= false end
@@ -972,6 +1020,7 @@ events:SetScript("OnEvent", function(_, event, name)
         -- Zygor's cleanup buttons in its menu and the Smart Injection System now open this window.
         _G.ZGV.ShowQuestCleanup = function() open() end
         installSmartSkip()
+        ns.InstallLowLevelMarker(_G.ZGV)
         ns.StartAssistant()
         installZygorButton()
     end

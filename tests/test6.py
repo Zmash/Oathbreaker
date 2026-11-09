@@ -66,3 +66,26 @@ ok(lua.eval('NS.ChangeSideRadius(1)')==500 and lua.eval('NS.ChangeSideRadius(-1)
 lua.execute("OathbreakerDB.sideRadius=1000"); ok(lua.eval('NS.ChangeSideRadius(1)')==1000,'Radius: oben begrenzt')
 lua.execute("OathbreakerDB.sideRadius=150"); ok(lua.eval('NS.ChangeSideRadius(-1)')==150,'Radius: unten begrenzt')
 lua.execute("OathbreakerDB.sideRadius=99999"); ok(lua.eval('NS.SideRadius()')==1000,'Radius: kaputter Wert wird begrenzt')
+# Low-Level-Markierung
+lua.execute(r'''
+plevel=26; UnitLevel=function() return plevel end
+LibQuestieDB={RequireContract=function() return true end,Quest={Exists=function(i) return i<1000 end,Get=function(i,k) if k=='questLevel' then return ({[1]=10,[2]=26,[3]=18,[4]=0})[i] end end}}
+OathbreakerDB.markLowLevel=true
+calls=0
+ZGV.GoalProto={GetText=function(self,a,b,c,nocolor) calls=calls+1; return "Accept 'Q'", 7, 8 end}
+NS.InstallLowLevelMarker(ZGV); NS.InstallLowLevelMarker(ZGV)
+mt={__index=ZGV.GoalProto}
+function goal(action,id) return setmetatable({action=action,questid=id},mt) end
+''')
+ok(lua.eval('NS.isLowLevelQuest(1)') is True,'Low-Level: Stufe 10 bei 26 ist grau')
+ok(lua.eval('NS.isLowLevelQuest(2)') is False and lua.eval('NS.isLowLevelQuest(3)') is False,'Low-Level: gleiche Stufe und knapp darunter nicht')
+ok(lua.eval('NS.isLowLevelQuest(4)') is False and lua.eval('NS.isLowLevelQuest(5000)') is False,'Low-Level: unbekannt oder ohne Stufe nicht')
+lua.execute("t,a,b=goal('accept',1):GetText()")
+ok('low level' in lua.eval('t') and lua.eval('a')==7 and lua.eval('b')==8 and lua.eval('calls')==1,'Zygor-Zeile: Hinweis angehaengt, Rueckgaben bleiben, nur einmal gehookt')
+lua.execute("t=goal('accept',2):GetText()"); ok('low level' not in lua.eval('t'),'Zygor-Zeile: normale Quest ohne Hinweis')
+lua.execute("t=goal('kill',1):GetText()"); ok('low level' not in lua.eval('t'),'Zygor-Zeile: nur Annahme und Abgabe')
+lua.execute("t=goal('turnin',1):GetText()"); ok('low level' in lua.eval('t'),'Zygor-Zeile: Abgabe auch')
+lua.execute("t=goal('accept',1):GetText(false,false,true,true)"); ok('low level' not in lua.eval('t'),'Zygor-Zeile: nicht beim Teilen (ohne Farben)')
+lua.execute("OathbreakerDB.markLowLevel=false; t=goal('accept',1):GetText()"); ok('low level' not in lua.eval('t'),'Schalter aus: kein Hinweis')
+lua.execute("OathbreakerDB.markLowLevel=true; plevel=12"); ok(lua.eval('NS.isLowLevelQuest(1)') is False,'Low-Level: Stufe aendert sich, Cache folgt')
+lua.execute("LibQuestieDB=nil; plevel=26"); ok(lua.eval('NS.isLowLevelQuest(1)') is False,'ohne Questie nichts markiert, kein Fehler')
