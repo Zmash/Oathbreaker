@@ -855,8 +855,21 @@ local function questieLevelMet(questID)
     return not (ok and type(required) == "number" and required > UnitLevel("player"))
 end
 
+-- True when Questie knows the quest and no race of your faction may take it (Neutral: never)
+function ns.isOtherFactionQuest(questID)
+    local faction = UnitFactionGroup("player")
+    local quests, lib = questieQuests(), rawget(_G, "LibQuestieDB")
+    local masks = lib and lib.Enum and lib.Enum.factionRaceMasks
+    local mine = masks and masks[faction]
+    if not (quests and mine) then return false end
+    local ok, races = pcall(function() return quests.Exists(questID) and quests.Get(questID, "requiredRaces") end)
+    if not (ok and type(races) == "number" and races > 0) then return false end
+    return bit.band(races, mine) == 0
+end
+
 -- Same answer whether Smart skip is on or off
 function ns.isQuestAvailable(zgv, questID)
+    if ns.isOtherFactionQuest(questID) then return false end
     if zygorIsQuestPossible and zgv.db and zgv.db.char
         and possibleWithChains(zgv, questID) ~= zgv.QuestDB.VALID_NOW then
         return false

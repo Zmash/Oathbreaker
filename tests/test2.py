@@ -13,6 +13,8 @@ wipe=function(t) for k in pairs(t) do t[k]=nil end end
 function UnitClass() return "Shaman","SHAMAN" end
 function InCombatLockdown() return false end
 function UnitOnTaxi() return false end
+faction="Horde"; function UnitFactionGroup() return faction end
+bit=bit or {band=function(a,b) local r,p=0,1 while a>0 and b>0 do if a%2==1 and b%2==1 then r=r+p end a=math.floor(a/2) b=math.floor(b/2) p=p*2 end return r end}
 completed={}; inlog={}
 C_QuestLog.IsQuestFlaggedCompleted=function(i) return completed[i] end
 C_QuestLog.GetLogIndexForQuestID=function(i) return inlog[i] and 3 or nil end
@@ -107,6 +109,26 @@ lua.execute("ZGV.Pointer.DestinationWaypoint={m=1456,x=.9,y=.9}"); scan(); ok(f.
 lua.execute("UnitOnTaxi=function() return true end"); scan(); ok(f.shown is False,'Hinweis: im Flug aus')
 
 lua.execute("UnitOnTaxi=function() return false end"); scan(); ok(f.shown is True,'Flug: wieder sichtbar')
+# Fraktion: Horde sieht keine Allianz-Flugpunkte und umgekehrt
+lua.execute("OathbreakerDB.hintFlights=true; px,py=6014+100,1862; ZGV.Pointer.DestinationWaypoint=nil; fp.faction='A'")
+scan(); ok(f.shown is False,'Fraktion: Horde, Allianz-Flugpunkt kein Hinweis')
+lua.execute("faction='Alliance'"); scan(); ok(f.shown is True,'Fraktion: Allianz, Allianz-Flugpunkt Hinweis')
+lua.execute("fp.faction='H'"); scan(); ok(f.shown is False,'Fraktion: Allianz, Horde-Flugpunkt kein Hinweis')
+lua.execute("fp.faction='B'"); scan(); ok(f.shown is True,'Fraktion: beidseitiger Flugpunkt Hinweis')
+lua.execute("faction='Neutral'; fp.faction='A'"); scan(); ok(f.shown is True,'Fraktion: Neutral sieht beide')
+lua.execute("faction='Horde'; fp.faction='H'")
+# Fraktion bei Quests (Questie requiredRaces, Horde=Maske 2, Allianz=Maske 1)
+lua.execute("""LibQuestieDB={RequireContract=function() return true end,Enum={factionRaceMasks={Alliance=1,Horde=2}},
+Quest={Exists=function(i) return i<100 end,Get=function(i,k) if k=='requiredRaces' then return ({[1]=1,[2]=2,[3]=3,[4]=0})[i] end end}}""")
+ok(lua.eval("NS.isOtherFactionQuest(1)") is True,'Quest: Allianzquest fuer Horde gesperrt')
+ok(lua.eval("NS.isOtherFactionQuest(2)") is False,'Quest: Hordequest fuer Horde offen')
+ok(lua.eval("NS.isOtherFactionQuest(3)") is False and lua.eval("NS.isOtherFactionQuest(4)") is False,'Quest: beide Seiten und ohne Angabe offen')
+ok(lua.eval("NS.isOtherFactionQuest(500)") is False,'Quest: unbekannte Quest offen')
+ok(lua.eval("NS.isQuestAvailable(ZGV,1)") is False,'Quest: isQuestAvailable sperrt Allianzquest')
+lua.execute("faction='Neutral'"); ok(lua.eval("NS.isOtherFactionQuest(1)") is False,'Quest: Neutral nicht gesperrt')
+lua.execute("faction='Horde'; LibQuestieDB=nil")
+ok(lua.eval("NS.isOtherFactionQuest(1)") is False,'Quest: ohne Questie nichts gesperrt')
+
 lua.execute("OathbreakerDB.hintFlights=false"); scan(); ok(f.shown is False,'Einstellung: Flug-Hinweise aus')
 
 # Guide-Finder

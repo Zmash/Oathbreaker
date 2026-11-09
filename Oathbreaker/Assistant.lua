@@ -90,6 +90,7 @@ end
 
 local function questState(zgv, id)
     if C_QuestLog.IsQuestFlaggedCompleted(id) then return "done" end
+    if ns.isOtherFactionQuest(id) then return "locked" end
     local index = C_QuestLog.GetLogIndexForQuestID(id)
     if index and index > 0 then return "log" end
     local questDB = zgv.QuestDB
@@ -364,12 +365,15 @@ local function nearestFlightPoint(zgv, px, py, instance)
     local taxi = zgv.LibTaxi
     if not (taxi and taxi.taxipoints) then return end
     local _, token = UnitClass("player")
+    -- Zygor tags flight points "A", "H" or "B" (both); Neutral Pandaren may use either side
+    local faction = UnitFactionGroup("player")
+    local enemy = (faction == "Horde" and "A") or (faction == "Alliance" and "H") or nil
     local limit = isLongTrip(zgv, px, py, instance) and FLIGHT_YARDS_LONG_TRIP or FLIGHT_YARDS
     local best, bestDistance, bestWorld
     for _, continent in pairs(taxi.taxipoints) do
         for _, zone in pairs(continent) do
             for _, node in ipairs(zone) do
-                local usable = node.known ~= true and node.taxioperator ~= "blackcat" and (not node.class or node.class == token)
+                local usable = node.known ~= true and node.taxioperator ~= "blackcat" and node.faction ~= enemy and (not node.class or node.class == token)
                 if usable and not db.hinted["fp:" .. node.name] then
                     local world = flightWorld(zgv, node)
                     if world and world.instance == instance then

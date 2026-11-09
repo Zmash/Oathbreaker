@@ -13,6 +13,7 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 
 ## Verhalten, das bewusst so ist
 
+- Fraktion: Flugpunkt-Hinweise überspringen Knoten der Gegenseite (`node.faction` A/H, B = beide, Neutral sieht alle). Quests der Gegenseite gelten über QuestieDB `requiredRaces` als nicht verfügbar (`ns.isOtherFactionQuest`). Zygor lädt ohnehin nur die Guides der eigenen Fraktion.
 - Aufräumen bricht nur Quests ab, die kein kommender Zygor-Guide braucht. Quests aus Dungeon-Guides sind geschützt.
 - Lupe: zeigt nur den Guide des aktuellen Questschritts (offene Ziele, sonst Hilfsschritte, sonst Abgabe) und zusätzlich die Abgabe, falls sie in einem anderen Guide liegt. Nur die Abgabe ist beschriftet (`Turn in`). Rechts der Abstand entlang `guide.next`, auf dem Icon `+n`, wenn der nächste Schritt später kommt.
 - Side Guides: standardmäßig an, ohne markierten Guide passiert nichts. Hinweis bei höchstens 350 yd Entfernung und 200 yd Umweg zum nächsten Zygor-Punkt, ohne Pfeilziel im Umkreis von 120 yd. Luftlinie. Nur Annahmen und Abgaben, die jetzt machbar sind. `Collect` im Dungeon-Angebot legt einen Side Guide an, bei ausgeschaltetem Modus einen Tab.
