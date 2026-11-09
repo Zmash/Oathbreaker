@@ -849,13 +849,15 @@ end
 
 local zygorIsQuestPossible
 
--- Zygor only runs its chain check during Quest Catchup unless told it has started
+-- Zygor only runs its chain check during Quest Catchup unless told it has started.
+-- On WoW Forever it also never creates the "use quest chains" option, so the profile
+-- value stays nil and every quest counts as possible: switch it on for the call.
 local function possibleWithChains(zgv, questID)
-    local char = zgv.db.char
-    local started = char.SISstarted
-    char.SISstarted = true
+    local char, profile = zgv.db.char, zgv.db.profile or {}
+    local started, chains = char.SISstarted, profile.beta_use_chains
+    char.SISstarted, profile.beta_use_chains = true, true
     local ok, state, comment = pcall(zygorIsQuestPossible, zgv.QuestDB, questID)
-    char.SISstarted = started
+    char.SISstarted, profile.beta_use_chains = started, chains
     if not ok then error(state, 0) end
     return state, comment
 end

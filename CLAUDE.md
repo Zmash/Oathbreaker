@@ -31,7 +31,7 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 - `ZGV.Parser.MakeCondition(text, true)`, `ZGV:RaceClassMatch(liste)`, `guide.condition_visible()` für Rassenfilter, `guide:GetStatus()` (INVALID, OUTLEVELED, COMPLETE, SUGGESTED, VALID).
 - `ZGV.Quest_Cache` und `ZGV.Quest_Cache_Accept` nach Titel, `pack.ids` ist anfangs ein Komma-String.
 - Vorquests: `ZGV.Chains[id]` ist eine Zahl oder `{ "AND"|"OR", id, ... }` (ohne Marker gilt OR). `ZGV.ChainsBreadcrumbs`, `ZGV.ChainsSiblings`, `ZGV.RevChains`.
-- `ZGV.QuestDB:IsQuestPossible` prüft Ketten nur bei `db.char.SISstarted` oder `SISdestination`. Smart Skip und `ns.isQuestAvailable` setzen das kurzzeitig.
+- `ZGV.QuestDB:IsQuestPossible` prüft Ketten nur bei `db.char.SISstarted` oder `SISdestination`. Smart Skip und `ns.isQuestAvailable` setzen das kurzzeitig. Auf Forever legt Zygor die Option `beta_use_chains` nie an (nur IsClassic/TBC/WOTLK), das Profilfeld ist nil und `IsQuestPossible` meldet sofort "chains disabled" = möglich. `possibleWithChains` setzt deshalb auch `profile.beta_use_chains` kurzzeitig auf true (seit 2.11.2; vorher griff Smart Skip nur über den Questie-Zweig, Zygor-Ketten wie Elder Crone -> Forsaken Aid wirkten nicht). Im Spiel noch ungeprüft.
 - Pfeil: `ZGV.Pointer:SetWaypoint(m,x,y,data,arrow)` mit x,y 0 bis 1, `ClearWaypoints("manual")`, danach `ZGV:ShowWaypoints()` zurück zum Guide. Route: `Pointer.DestinationWaypoint`.
 - Tabs: `ZGV.Tabs:LoadGuideToTab(guide, step)`, `ZGV:FocusStep(n, true)`. Positionen über `ZGV.HBD`, `ZGV.Parser.ParseMapXYDist(text)`, Flugpunkte `ZGV.LibTaxi.taxipoints`.
 

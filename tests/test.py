@@ -60,8 +60,8 @@ g2={title="Next",rawdata="step\nkill Foo |q 11/1\n"}
 g3={title="DUNGEONS\\WC",rawdata="turnin D##5\n"}
 g4={title="LEVELING\\Shaman Class Quests",rawdata="accept W##9\n"}
 g5={title="LEVELING\\Alt",rawdata="accept X##1\n"}
-ZGV={CurrentGuide=g1,registeredguides={g1,g2,g3,g4,g5},db={char={}}}
-ZGV.QuestDB={VALID_NOW=1,VALID_FUTURE=2,IsQuestPossible=function(self,id) if not ZGV.db.char.SISstarted then return 1,'no catchup' end; if id==99 then error('kaputt') end; return id==50 and 2 or 1,'checked' end}
+ZGV={CurrentGuide=g1,registeredguides={g1,g2,g3,g4,g5},db={char={},profile={}}}
+ZGV.QuestDB={VALID_NOW=1,VALID_FUTURE=2,IsQuestPossible=function(self,id) if not ZGV.db.profile.beta_use_chains then return 1,'chains disabled' end; if not ZGV.db.char.SISstarted then return 1,'no catchup' end; if id==99 then error('kaputt') end; return id==50 and 2 or 1,'checked' end}
 function ZGV:GetGuideByTitle(t) return t=="Next" and g2 or nil end
 '''
 lua=L.LuaRuntime(unpack_returned_tuples=True); lua.execute(mock)
@@ -128,7 +128,7 @@ lua.execute("zb.scripts.OnEnter(zb); zb.scripts.OnLeave(zb)"); ok(True,'Zygor-Bu
 
 pos=lua.eval("function(i) return ZGV.QuestDB:IsQuestPossible(i) end")
 ok(pos(50)==(2,'checked'),'Skip: Voraussetzung wird immer geprueft')
-ok(lua.eval("ZGV.db.char.SISstarted") is None,'Skip: Zygor-Status bleibt unveraendert')
+ok(lua.eval("ZGV.db.char.SISstarted") is None and lua.eval("ZGV.db.profile.beta_use_chains") is None,'Skip: Zygor-Status bleibt unveraendert (Ketten-Option auf Forever nil)')
 ok(pos(51)[0]==1,'Skip: erfuellte Quest bleibt moeglich')
 lua.execute("ok2,err=pcall(ZGV.QuestDB.IsQuestPossible,ZGV.QuestDB,99)")
 ok(lua.eval("ok2") is False and lua.eval("ZGV.db.char.SISstarted") is None,'Skip: bei Fehler Status zurueckgesetzt')
@@ -150,4 +150,4 @@ ok(pos(63)[0]==2,'Questie: Vorquest nur im Log reicht nicht')
 lua.execute("ZGV.CurrentStep={goals={{action='turnin',questid=503}}}"); ok(pos(63)[0]==1,'Questie: Abgabe im selben Schritt reicht')
 ok(pos(70)[1]=='checked','Questie: Zygor-Kette hat Vorrang')
 ok(pos(71)[0]==1 and pos(72)[0]==1,'Questie: ohne Daten bleibt Quest moeglich')
-lua.execute("local t=NS.settingsFrame.toggles.smartSkip; t.scripts.OnClick(t)"); ok(pos(50)[1]=='no catchup','Skip: Schalter schaltet ab')
+lua.execute("local t=NS.settingsFrame.toggles.smartSkip; t.scripts.OnClick(t)"); ok(pos(50)[1]=='chains disabled','Skip: Schalter schaltet ab (Zygors Ursprungsantwort)')
