@@ -880,6 +880,50 @@ local function installSmartSkip()
     end
 end
 
+-- Zygor only skips a step whose quest goals are all impossible while it is already
+-- fast-forwarding, and a "talk to" goal in the same step can keep it open. Skip such
+-- steps ourselves, but only moving forward (going back stays possible).
+local SKIPPABLE_ACTIONS = { talk = true, ["goto"] = true, gossip = true, text = true, accept = true, turnin = true }
+local lastGuide, lastNum, movingForward
+
+function ns.SkipImpossibleStep(zgv)
+    local step = zgv.CurrentStep
+    if not (db.smartSkip and step and step.goals and not zgv.pause) then return end
+    local guide, num = zgv.CurrentGuide, step.num
+    if guide ~= lastGuide or num ~= lastNum then
+        movingForward = lastGuide == nil or (guide == lastGuide and num > lastNum)
+        lastGuide, lastNum = guide, num
+    end
+    if not movingForward then return end
+    local questGoals = 0
+    for _, goal in ipairs(step.goals) do
+        local action = goal.action
+        if action then
+            if not SKIPPABLE_ACTIONS[action] then return end
+            if action == "accept" or action == "turnin" then
+                questGoals = questGoals + 1
+                local complete, possible = goal:IsComplete()
+                if complete or possible then return end
+            end
+        end
+    end
+    if questGoals > 0 then zgv:SkipStep(true) end
+end
+
+local function installStepSkipper(zgv)
+    local original = zgv and zgv.TryToCompleteStep
+    if not original or zgv.oathbreakerStepSkipper then return end
+    zgv.oathbreakerStepSkipper = true
+    local last = 0
+    zgv.TryToCompleteStep = function(self, ...)
+        original(self, ...)
+        local now = GetTime()
+        if now - last < 0.5 or (self.Frame and not self.Frame:IsVisible()) then return end
+        last = now
+        ns.guarded("step skip", ns.SkipImpossibleStep, self)
+    end
+end
+
 local function questieLevelMet(questID)
     local quests = questieQuests()
     if not quests then return true end
@@ -1023,6 +1067,7 @@ events:SetScript("OnEvent", function(_, event, name)
         _G.ZGV.ShowQuestCleanup = function() open() end
         installSmartSkip()
         ns.InstallLowLevelMarker(_G.ZGV)
+        installStepSkipper(_G.ZGV)
         ns.StartAssistant()
         installZygorButton()
     end

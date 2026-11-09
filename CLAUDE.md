@@ -53,3 +53,5 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 - Noch nie im Spiel geprüft: Optik und Verhalten von Side Guides und Guide Check.
 - Offen: fertige Side Guides automatisch freigeben, Unterstützung für das Detailfenster des Ellesmere Quest Trackers, feste „Follow the path“-Wegpunkte optional überspringen.
 - Abgelehnt, nicht wieder vorschlagen: Routen bündeln, Hearth-Logik, XP-Balken, Unterwegs-Ideen, Dungeon-Reisekoordinator. Zwei Guides echt zu einer Route zu verschmelzen ist bewusst nicht das Ziel.
+
+- Schritt-Skipper (`ns.SkipImpossibleStep`, 2.11.3): Zygor überspringt Schritte mit nur unmöglichen Quest-Zielen nur im `fastforward`, ein Talk-Ziel hält den Schritt zusätzlich offen. Der Skipper hängt an `TryToCompleteStep`, überspringt nur vorwärts und nur Schritte aus talk/goto/gossip/text/accept/turnin mit mindestens einem unmöglichen Quest-Ziel. Im Spiel noch ungeprüft.
