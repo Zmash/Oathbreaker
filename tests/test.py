@@ -66,7 +66,7 @@ function ZGV:GetGuideByTitle(t) return t=="Next" and g2 or nil end
 '''
 lua=L.LuaRuntime(unpack_returned_tuples=True); lua.execute(mock)
 lua.globals()['SRC']=open(os.path.join(ADDON,'Oathbreaker.lua'),encoding='utf8').read()
-lua.execute("NS={}; assert(loadstring(SRC,'Q'))('Oathbreaker',NS); function NS.StartAssistant() end; function NS.SideGuideCount() return 0,2 end")
+lua.execute("NS={}; assert(loadstring(SRC,'Q'))('Oathbreaker',NS); function NS.StartAssistant() end; function NS.SideGuideCount() return 0,2 end; function NS.SideRadius() return 450 end")
 def ok(c,m):
     print(('PASS ' if c else 'FAIL ')+m)
     if not c: sys.exit(1)

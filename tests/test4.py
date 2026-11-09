@@ -10,7 +10,7 @@ UnitLevel=function() return plevel end; plevel=20
 ready={}
 C_QuestLog.ReadyForTurnIn=function(i) return ready[i] end
 C_QuestLog.IsComplete=function(i) return ready[i] end
-OathbreakerDB.guideCheck=false; OathbreakerDB.hintQuests=false; OathbreakerDB.hintFlights=false; OathbreakerDB.offerDungeons=false
+OathbreakerDB.sideRadius=350; OathbreakerDB.guideCheck=false; OathbreakerDB.hintQuests=false; OathbreakerDB.hintFlights=false; OathbreakerDB.offerDungeons=false
 local env={haveq=function(i) return inlog[i] and true or false end,completedq=function(i) return completed[i] and true or false end,Shaman=true,Warlock=false}
 setmetatable(env,{__index=function() return false end})
 ZGV.Parser.MakeCondition=function(c) local f=assert(loadstring("return ("..c..")")); setfenv(f,env); return f end
@@ -74,6 +74,11 @@ ok('side quests: Anne' in t.heading.text or 'Open Q' in t.heading.text,'Hinweis 
 lua.execute("toastF=(function() for _,f in ipairs(frames) do if rawget(f,'hint') then return f end end end)()"); keys=[lua.eval('toastF.hint["keys"][%d]'%i) for i in range(1,lua.eval('#toastF.hint["keys"]')+1)]
 print(keys)
 ok(sorted(keys)==['side:accept:100','side:accept:600'],'Nur machbare Annahmen am Ort: '+str(keys))
+ok(lua.eval('#toastF.hint.rows')==2 and lua.eval('toastF.rows[1].shown') is True and lua.eval('toastF.rows[2].shown') is True,'Hinweis: eine Zeile pro Quest')
+labels=lua.eval('toastF.rows[1].label.text')+' '+lua.eval('toastF.rows[2].label.text'); print(labels); ok('Open Q' in labels and 'Totem' in labels and 'Accept' in labels,'Zeilen nennen die Quests')
+lua.execute("wp=nil; toastF.rows[2].scripts.OnClick(toastF.rows[2])"); ok(lua.eval("wp and wp.d.title")==lua.eval('toastF.rows[2].target.waypoint') and lua.eval("wp.d.title"). startswith('Accept'),'Klick auf Zeile setzt Pfeil dieser Quest')
+lua.execute("inlog[100]=true"); scan(); t=toast(); ok(lua.eval('toastF.rows[1].shown') is False and 'Totem' in t.heading.text,'Eine angenommen: nur noch die andere, keine Zeilen')
+lua.execute("inlog[100]=nil"); scan()
 ok(lua.eval("NS.SideQuests.IsDoable(ZGV,{verb='accept',id=201,minLevel=0,step={conditions={}},after={200}})") is False,'Folgequest ohne Vorquest gesperrt')
 lua.execute("completed[200]=true"); ok(lua.eval("NS.SideQuests.IsDoable(ZGV,{verb='accept',id=201,minLevel=0,step={conditions={}},after={200}})") is True,'Folgequest nach Abgabe frei'); lua.execute("completed[200]=nil")
 # Abgabe nur wenn fertig und im Log

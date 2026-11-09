@@ -7,6 +7,7 @@ Zygor-Begleiter für WoW Forever, Zmash gibt ihn über Discord an Freunde weiter
 - `Oathbreaker.lua`: Aufräumliste, Einstellungen, Minimap-Button, Knopf in Zygors Titelleiste, Smart Skip, gemeinsame Helfer
 - `Assistant.lua`: Dungeon-Angebot, Hinweise in der Nähe, Lupe im Questlog mit Questroute
 - `SideQuests.lua`: bis zu 2 Side Guides, Abstecher-Hinweise, Auswahlfenster
+- `Update.lua`: Update-Hinweis: Spieler tauschen ihre Version per Addon-Nachricht (Gilde, Gruppe, verstecktes temporäres Chat-Kanal `OathbreakerSync`). Wer eine neuere hört, bekommt ein Fenster mit kopierbarem Link auf die neueste GitHub-Release-Seite, wer eine ältere hört, antwortet per Flüstern. Schalter „Update notice". Im Spiel noch ungeprüft.
 - `GuideCheck.lua`: Empfehlung des nächsten Leveling-Guides beim Überleveln
 
 Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weiteren Slash-Befehle außer `/oathbreaker`. SavedVariablesPerCharacter: `OathbreakerDB`.
@@ -17,6 +18,7 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 - Aufräumen bricht nur Quests ab, die kein kommender Zygor-Guide braucht. Quests aus Dungeon-Guides sind geschützt.
 - Lupe: zeigt nur den Guide des aktuellen Questschritts (offene Ziele, sonst Hilfsschritte, sonst Abgabe) und zusätzlich die Abgabe, falls sie in einem anderen Guide liegt. Nur die Abgabe ist beschriftet (`Turn in`). Rechts der Abstand entlang `guide.next`, auf dem Icon `+n`, wenn der nächste Schritt später kommt.
 - Guide Check per Knopf (Einstellungen, „Check guide now"): läuft ohne Levelbedingung, ignoriert „Stay here" und „Later", vergleicht den aktuellen Leveling-Guide mit den folgenden und zeigt immer ein Fenster.
+- Side-Guide-Hinweis: Radius einstellbar (Standard 450 yd, Schritte 50, 150 bis 1000), Umweg und Umkreis ohne Pfeilziel skalieren mit (4/7 und 12/35). Bei mehreren Quests am selben NPC listet das Fenster jede Quest als eigene Zeile, Klick setzt den Pfeil auf genau diese. Icon ist Blizzards `QuestNormal`/`QuestTurnin`, nicht das durchgestrichene Addon-Icon.
 - Side Guides: standardmäßig an, ohne markierten Guide passiert nichts. Hinweis bei höchstens 350 yd Entfernung und 200 yd Umweg zum nächsten Zygor-Punkt, ohne Pfeilziel im Umkreis von 120 yd. Luftlinie. Nur Annahmen und Abgaben, die jetzt machbar sind. `Collect` im Dungeon-Angebot legt einen Side Guide an, bei ausgeschaltetem Modus einen Tab.
 - Guide Check: nur bei `LEVELING\...(a-b)`, ab b+2. Ziel ist der erste Guide der Kette, für den man nicht zu hoch ist, geprüft werden die 3 Guides ab dort. Mehr als 5 Pflichtquests: kein Fenster, nur eine Chat-Zeile. Ketten mit mehr als 3 Quests pro freigeschalteter Quest entfallen.
 

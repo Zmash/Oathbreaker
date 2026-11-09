@@ -261,6 +261,7 @@ local SETTINGS = {
     { key = "guideFinder", title = "Quest log guide finder", text = "Show which Zygor guides contain the selected quest" },
     { key = "guideCheck", title = "Guide check", text = "Suggest the next leveling guide once you have outleveled yours" },
     { key = "sideQuests", title = "Side quests", text = "Hint at nearby quests from the guides you take along" },
+    { key = "updateNotice", title = "Update notice", text = "Tell me when someone I play with runs a newer Oathbreaker" },
     { key = "showMinimap", title = "Minimap button", text = "Show the Oathbreaker button on the minimap" },
 }
 
@@ -278,6 +279,7 @@ local function setSetting(key, value)
         return
     end
     db[key] = value
+    if key == "updateNotice" and ns.UpdateNoticeChanged then ns.UpdateNoticeChanged(value) end
     if key == "smartSkip" and _G.ZGV and _G.ZGV.UpdateFrame then _G.ZGV:UpdateFrame() end
 end
 
@@ -307,7 +309,7 @@ end
 local function createSettings()
     local rowHeight, top = 46, HEADER_H
     local f = CreateFrame("Frame", "OathbreakerSettings", UIParent)
-    f:SetSize(420, top + #SETTINGS * rowHeight + 98)
+    f:SetSize(420, top + #SETTINGS * rowHeight + 134)
     f:SetPoint("CENTER", 0, 40)
     f:SetFrameStrata("DIALOG")
     f:SetFrameLevel(50)
@@ -426,9 +428,24 @@ local function createSettings()
     f.check:SetScript("OnLeave", function(self) self.label:SetTextColor(1, 1, 1, 0.6) end)
     f.check:SetScript("OnClick", function() ns.guarded("guide check", ns.CheckGuideNow, _G.ZGV) end)
 
+    f.radiusLabel = font(f, 12, 0.8)
+    f.radiusLabel:SetPoint("BOTTOMLEFT", 18, 94)
+    f.radiusLabel:SetText("Side quest radius")
+    f.radiusLess = stepButton(f, "-")
+    f.radiusLess:SetPoint("LEFT", f.radiusLabel, "RIGHT", 10, 0)
+    f.radiusValue = font(f, 12, 0.9)
+    f.radiusValue:SetWidth(64)
+    f.radiusValue:SetPoint("LEFT", f.radiusLess, "RIGHT", 0, 0)
+    f.radiusMore = stepButton(f, "+")
+    f.radiusMore:SetPoint("LEFT", f.radiusValue, "RIGHT", 0, 0)
+    local function showRadius() f.radiusValue:SetText(("%d yd"):format(ns.SideRadius())) end
+    f.radiusLess:SetScript("OnClick", function() ns.ChangeSideRadius(-1); showRadius() end)
+    f.radiusMore:SetScript("OnClick", function() ns.ChangeSideRadius(1); showRadius() end)
+
     function f.Refresh()
         local r, g, b = accent()
         f.topLine:SetColorTexture(r, g, b, 0.85)
+        showRadius()
         for key, toggle in pairs(f.toggles) do toggle.Paint(settingValue(key)) end
         local count, limit = ns.SideGuideCount()
         f.sideGuides.label:SetText(("Side guides (%d/%d)"):format(count, limit))
@@ -941,6 +958,7 @@ events:SetScript("OnEvent", function(_, event, name)
         if db.guideFinder == nil then db.guideFinder = true end
         if db.sideQuests == nil then db.sideQuests = true end
         if db.guideCheck == nil then db.guideCheck = true end
+        if db.updateNotice == nil then db.updateNotice = true end
         db.guideCheckStay = db.guideCheckStay or {}
         for _, key in ipairs({ "offerDungeons", "hintQuests", "hintFlights" }) do
             if db[key] == nil then db[key] = db.hints ~= false end

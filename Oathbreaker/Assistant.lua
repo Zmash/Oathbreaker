@@ -278,16 +278,59 @@ end
 -------------------------------------------------------------------------------
 -- Nearby hints
 -------------------------------------------------------------------------------
+local TOAST_BASE_H, TOAST_ROW_H = 58, 22
+
+local function goTo(target, hint)
+    local pointer = _G.ZGV.Pointer
+    pointer:SetWaypoint(target.map, target.x, target.y, {
+        title = target.waypoint, type = "manual", cleartype = true, icon = pointer.Icons.greendotbig,
+        onminimap = "always", overworld = true, showonedge = true,
+    })
+    if hint.onClick then hint.onClick(hint) end
+end
+
+-- Blizzard's own quest marker; falls back to our icon if the client lacks the atlas
+local function setToastIcon(icon, atlas)
+    if atlas and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(atlas) then
+        icon:SetAtlas(atlas)
+    else
+        icon:SetTexture(ns.ICON)
+        icon:SetTexCoord(0, 1, 0, 1)
+    end
+end
+
+local function createToastRow(t, index)
+    local row = CreateFrame("Button", nil, t)
+    row:SetHeight(TOAST_ROW_H)
+    local top = -(TOAST_BASE_H - 4 + (index - 1) * TOAST_ROW_H)
+    row:SetPoint("TOPLEFT", t, "TOPLEFT", 1, top)
+    row:SetPoint("TOPRIGHT", t, "TOPRIGHT", -1, top)
+    row.hover = row:CreateTexture(nil, "BACKGROUND")
+    row.hover:SetAllPoints()
+    row.hover:SetColorTexture(1, 1, 1, 0.06)
+    row.hover:Hide()
+    row.label = ns.font(row, 12, 0.9)
+    row.label:SetPoint("LEFT", 52, 0)
+    row.label:SetPoint("RIGHT", -14, 0)
+    row.label:SetJustifyH("LEFT")
+    row.label:SetWordWrap(false)
+    row:SetScript("OnEnter", function(self) self.hover:Show() end)
+    row:SetScript("OnLeave", function(self) self.hover:Hide() end)
+    row:SetScript("OnClick", function(self) goTo(self.target, t.hint) end)
+    return row
+end
+
 local function createToast()
     local db = ns.GetDB()
-    local t = panel("OathbreakerHint", 360, 58, "MEDIUM")
+    local t = panel("OathbreakerHint", 360, TOAST_BASE_H, "MEDIUM")
     if db.toastPos then
         t:SetPoint(db.toastPos[1], UIParent, db.toastPos[2], db.toastPos[3], db.toastPos[4])
     else
         t:SetPoint("TOP", UIParent, "TOP", 0, -230)
     end
     t.icon:SetSize(30, 30)
-    t.icon:SetPoint("LEFT", 12, 0)
+    t.icon:SetPoint("TOPLEFT", 12, -14)
+    t.rows = {}
     t.heading = ns.font(t, 13)
     t.heading:SetPoint("TOPLEFT", t.icon, "TOPRIGHT", 10, 1)
     t.heading:SetPoint("RIGHT", t, "RIGHT", -30, 0)
@@ -307,12 +350,7 @@ local function createToast()
         db.toastPos = { point, relative, x, y }
     end)
     t:SetScript("OnClick", function(self)
-        local hint, pointer = self.hint, _G.ZGV.Pointer
-        pointer:SetWaypoint(hint.map, hint.x, hint.y, {
-            title = hint.waypoint, type = "manual", cleartype = true, icon = pointer.Icons.greendotbig,
-            onminimap = "always", overworld = true, showonedge = true,
-        })
-        if hint.onClick then hint.onClick(hint) end
+        goTo(self.hint, self.hint)
     end)
     t.closeButton:SetScript("OnClick", function()
         local hint = t.hint
@@ -329,6 +367,17 @@ local function showHint(hint)
     toast.hint = hint
     toast.heading:SetText(hint.heading)
     toast.detail:SetText(hint.detail)
+    setToastIcon(toast.icon, hint.atlas)
+    local rows = hint.rows or {}
+    for index, entry in ipairs(rows) do
+        toast.rows[index] = toast.rows[index] or createToastRow(toast, index)
+        local row = toast.rows[index]
+        row.target = entry
+        row.label:SetText(("|cffffd200%s|r  %s"):format(entry.verb, entry.title))
+        row:Show()
+    end
+    for index = #rows + 1, #toast.rows do toast.rows[index]:Hide() end
+    toast:SetHeight(TOAST_BASE_H + (rows[1] and (#rows * TOAST_ROW_H + 2) or 0))
     paintAccent(toast)
     toast:Show()
 end
@@ -388,7 +437,7 @@ local function nearestFlightPoint(zgv, px, py, instance)
     end
     if best then
         return {
-            key = "fp:" .. best.name, map = best.m, x = bestWorld.x, y = bestWorld.y,
+            key = "fp:" .. best.name, map = best.m, x = bestWorld.x, y = bestWorld.y, atlas = "TaxiNode_Neutral",
             heading = "New flight point nearby: " .. best.name,
             detail = ("%s, %d yd. Discover it so Zygor can fly from here."):format(best.npc or "Flight master", math.floor(bestDistance + 0.5)),
             waypoint = "Discover flight point: " .. best.name,
@@ -424,7 +473,7 @@ local function nearestDungeonQuest(zgv, px, py, instance)
     if best then
         local more = extra > 0 and ("  +%d more"):format(extra) or ""
         return {
-            key = "q:" .. best.id, map = best.map, x = best.x, y = best.y,
+            key = "q:" .. best.id, map = best.map, x = best.x, y = best.y, atlas = "QuestNormal",
             heading = ("%s quest nearby"):format(bestEntry.name),
             detail = ("%s%s, %d yd%s"):format(best.title, best.npc and (" from " .. best.npc) or "", math.floor(bestDistance + 0.5), more),
             waypoint = ("Accept %s"):format(best.title),

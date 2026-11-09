@@ -5,7 +5,17 @@ local ADDON, ns = ...
 
 local EUI = EllesmereUI
 local MAX_SIDE_GUIDES = 2
-local STOP_YARDS, DETOUR_YARDS, NO_TARGET_YARDS = 350, 200, 120
+-- One radius in the settings drives all three limits (they used to be 350, 200 and 120)
+local DEFAULT_RADIUS, MIN_RADIUS, MAX_RADIUS, RADIUS_STEP = 450, 150, 1000, 50
+function ns.SideRadius()
+    local radius = tonumber(ns.GetDB().sideRadius) or DEFAULT_RADIUS
+    return math.max(MIN_RADIUS, math.min(MAX_RADIUS, radius))
+end
+function ns.ChangeSideRadius(direction)
+    local db = ns.GetDB()
+    db.sideRadius = math.max(MIN_RADIUS, math.min(MAX_RADIUS, ns.SideRadius() + direction * RADIUS_STEP))
+    return db.sideRadius
+end
 local SAME_NPC_YARDS, LEFT_BEHIND_YARDS = 15, 700
 local PICKER_WIDTH, PICKER_HEIGHT, PICKER_TOP, PICKER_ROW_H = 420, 480, 64, 32
 
@@ -159,6 +169,8 @@ end
 
 local function findNearby(zgv, px, py, instance)
     local db, hbd = ns.GetDB(), zgv.HBD
+    local STOP_YARDS = ns.SideRadius()
+    local DETOUR_YARDS, NO_TARGET_YARDS = STOP_YARDS * 4 / 7, STOP_YARDS * 12 / 35
     local targetX, targetY = arrowTarget(zgv, instance)
     local direct = targetX and hbd:GetWorldDistance(instance, px, py, targetX, targetY)
     local found, seen = {}, {}
@@ -223,6 +235,7 @@ local function buildHint(zgv, found, instance)
     local hint = {
         key = first.key, keys = keys, stops = stops, map = first.map, x = first.x, y = first.y,
         onClick = ns.StartSideDetour, onDismiss = ns.EndSideDetour,
+        atlas = first.verb == "accept" and "QuestNormal" or "QuestTurnin",
     }
     if #stops == 1 then
         hint.heading = "Side quest: " .. first.title
@@ -233,6 +246,14 @@ local function buildHint(zgv, found, instance)
         hint.heading = ("%d side quests: %s"):format(#stops, place)
         hint.detail = ("%s, %s%s"):format(countVerbs(stops):gsub("^%l", string.upper), walkText(best), suffix)
         hint.waypoint = "Side quests: " .. place
+        -- One clickable line per quest, so you see which ones are meant
+        hint.rows = {}
+        for _, stop in ipairs(stops) do
+            hint.rows[#hint.rows + 1] = {
+                verb = verbWord(stop), title = stop.title,
+                map = stop.map, x = stop.x, y = stop.y, waypoint = verbWord(stop) .. " " .. stop.title,
+            }
+        end
     end
     return hint
 end

@@ -4,7 +4,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 failed = False
-for name in ("test.py", "test2.py", "test3.py", "test4.py", "test5.py"):
+for name in ("test.py", "test2.py", "test3.py", "test4.py", "test5.py", "test6.py"):
     result = subprocess.run([sys.executable, name], cwd=HERE, capture_output=True, text=True)
     output = result.stdout + result.stderr
     passes = output.count("PASS ")
