@@ -171,3 +171,8 @@ ok(run(lua.eval("stepTalkTurnin(10)"))==2,'Schritt: rueckwaerts (zurueck geklick
 ok(run(lua.eval("stepTalkTurnin(17)"))==3,'Schritt: wieder vorwaerts')
 lua.execute("local t=NS.settingsFrame.toggles.smartSkip; t.scripts.OnClick(t)")
 ok(run(lua.eval("stepTalkTurnin(18)"))==3,'Schritt: Smart Skip aus = nichts')
+
+# Bewertungsfenster von Zygor
+ok(lua.eval("ZGV.db.profile.ratings") is False,'Bewertung: beim Login ausgeschaltet (Standard)')
+lua.execute("local t=NS.settingsFrame.toggles.skipRating; t.scripts.OnClick(t)"); ok(lua.eval("ZGV.db.profile.ratings") is True,'Bewertung: Schalter aus = Zygor fragt wieder')
+lua.execute("local t=NS.settingsFrame.toggles.skipRating; t.scripts.OnClick(t)"); ok(lua.eval("ZGV.db.profile.ratings") is False,'Bewertung: Schalter an = keine Frage')

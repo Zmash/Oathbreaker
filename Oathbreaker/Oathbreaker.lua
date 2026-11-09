@@ -262,6 +262,7 @@ local SETTINGS = {
     { key = "guideCheck", title = "Guide check", text = "Suggest the next leveling guide once you have outleveled yours" },
     { key = "sideQuests", title = "Side quests", text = "Hint at nearby quests from the guides you take along" },
     { key = "markLowLevel", title = "Mark low-level quests", text = "Add (low level) to grey quests in Zygor's steps and in hints" },
+    { key = "skipRating", title = "No guide rating", text = "Don't ask me to rate a Zygor guide when I finish it" },
     { key = "updateNotice", title = "Update notice", text = "Tell me when someone I play with runs a newer Oathbreaker" },
     { key = "showMinimap", title = "Minimap button", text = "Show the Oathbreaker button on the minimap" },
 }
@@ -269,6 +270,12 @@ local SETTINGS = {
 local function settingValue(key)
     if key == "showMinimap" then return not db.minimap.hide end
     return db[key]
+end
+
+-- Zygor skips its rating window (and goes straight to the next guide) when this is off
+local function applyRatingSetting()
+    local profile = _G.ZGV and _G.ZGV.db and _G.ZGV.db.profile
+    if profile then profile.ratings = not db.skipRating end
 end
 
 local function setSetting(key, value)
@@ -280,6 +287,7 @@ local function setSetting(key, value)
         return
     end
     db[key] = value
+    if key == "skipRating" then applyRatingSetting() end
     if key == "updateNotice" and ns.UpdateNoticeChanged then ns.UpdateNoticeChanged(value) end
     if key == "smartSkip" and _G.ZGV and _G.ZGV.UpdateFrame then _G.ZGV:UpdateFrame() end
 end
@@ -1053,6 +1061,7 @@ events:SetScript("OnEvent", function(_, event, name)
         if db.guideCheck == nil then db.guideCheck = true end
         if db.updateNotice == nil then db.updateNotice = true end
         if db.markLowLevel == nil then db.markLowLevel = true end
+        if db.skipRating == nil then db.skipRating = true end
         db.guideCheckStay = db.guideCheckStay or {}
         for _, key in ipairs({ "offerDungeons", "hintQuests", "hintFlights" }) do
             if db[key] == nil then db[key] = db.hints ~= false end
@@ -1068,6 +1077,7 @@ events:SetScript("OnEvent", function(_, event, name)
         installSmartSkip()
         ns.InstallLowLevelMarker(_G.ZGV)
         installStepSkipper(_G.ZGV)
+        if db.skipRating then applyRatingSetting() end
         ns.StartAssistant()
         installZygorButton()
     end
