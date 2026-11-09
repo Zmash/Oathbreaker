@@ -2,7 +2,7 @@
 ## Title: Oathbreaker
 ## Notes: Safely clear out old quests: suggests only quests no upcoming Zygor guide needs, and lets you tick each one.
 ## Author: Zmash
-## Version: 2.10.2
+## Version: 2.10.3
 ## IconTexture: Interface\AddOns\Oathbreaker\Media\oathbreaker.tga
 ## Dependencies: ZygorGuidesViewerForever, EllesmereUI
 ## OptionalDeps: QuestieDB

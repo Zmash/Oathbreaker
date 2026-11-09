@@ -110,6 +110,12 @@ lua.execute("gcw:Hide(); gcw.shown=false; ZGV.CurrentGuide=gD; plevel=40; NS.Res
 lua.execute("ZGV.CurrentGuide=gA; plevel=24; NS.ResetGuideCheck(); NS.CheckGuide(ZGV)"); ok(lua.eval('gcw.shown') is False,'Unter Schwelle: kein Check')
 lua.execute("plevel=25; NS.CheckGuide(ZGV)"); ok(lua.eval('gcw.shown') is True,'Genau 2 ueber Maximum: Check')
 lua.execute("gcw:Hide(); gcw.shown=false")
+# Knopf: Check unabhaengig von Level, Stay und Later
+lua.execute("ZGV.CurrentGuide=gA; plevel=16; OathbreakerDB.guideCheckStay['LEVELING\\A (21-23)']=true; NS.CheckGuide(ZGV)"); ok(lua.eval('gcw.shown') is False,'Knopf: ohne Knopf kein Check bei niedrigem Level')
+lua.execute("NS.CheckGuideNow(ZGV)"); ok(lua.eval('gcw.shown') is True and lua.eval('gcw.heading.text')=='Guide check','Knopf: Fenster trotz Level und Stay')
+lua.execute("gcw:Hide(); gcw.shown=false; ZGV.CurrentGuide=gD; said=nil; NS.CheckGuideNow(ZGV)"); ok(lua.eval('gcw.shown') is False,'Knopf: Dungeon-Guide, kein Fenster')
+lua.execute("ZGV.CurrentGuide=gA; NS.ToggleSettings(); NS.settingsFrame.check.scripts.OnClick()"); ok(lua.eval('gcw.shown') is True,'Knopf im Einstellungsfenster oeffnet den Check'); lua.execute("gcw:Hide(); gcw.shown=false; NS.settingsFrame:Hide()")
+lua.execute("OathbreakerDB.guideCheckStay={}; ZGV.CurrentGuide=nil; NS.CheckGuideNow(nil)"); ok(lua.eval('gcw.shown') is False,'Knopf: ohne Guide kein Fehler')
 # Zu viele Pflichtquests
 lua.execute(r'''gA.rawdata="step\n"; gB.rawdata="step\n"; for i=1,6 do gA.rawdata=gA.rawdata.."accept A"..i.."##"..(100+i).." |goto X 1,1\nstep\n"; gB.rawdata=gB.rawdata.."turnin A"..i.."##"..(100+i).." |goto Y 1,1\nstep\n" end
 NS.SideQuests.Reset(); NS.ResetGuideCheck(); said=nil; local oldsay=NS.say; plevel=26; NS.CheckGuide(ZGV)''')

@@ -309,11 +309,11 @@ local function noteText(todo, dropped)
     return text
 end
 
-local function showWindow(zgv, level, target, todo, dropped)
+local function showWindow(zgv, level, target, todo, dropped, manual)
     window = window or createWindow()
     window.current, window.target = zgv.CurrentGuide, target
-    window.heading:SetText("You have outleveled this guide")
-    window.summary:SetText(("Level %d in %s. Better: %s"):format(level, shortName(zgv.CurrentGuide), shortName(target)))
+    window.heading:SetText(manual and "Guide check" or "You have outleveled this guide")
+    window.summary:SetText(("Level %d in %s. %s: %s"):format(level, shortName(zgv.CurrentGuide), manual and "Next" or "Better", shortName(target)))
     window.note:SetText(noteText(todo, dropped))
     for index, entry in ipairs(todo) do
         window.rows[index] = window.rows[index] or createRow(window, index)
@@ -358,6 +358,22 @@ function ns.CheckGuide(zgv)
     if later[answer] then return end
     later[answer] = true
     showWindow(zgv, level, target, todo, dropped)
+end
+
+-- Button: same comparison, but whatever your level, "Stay here" or "Later", and always an answer
+function ns.CheckGuideNow(zgv)
+    local guide, level = zgv and zgv.CurrentGuide, UnitLevel("player")
+    if not (guide and (guide.title or ""):find("^LEVELING")) then
+        ns.say("Open a leveling guide first, then run the guide check.")
+        return
+    end
+    local target, skipped, future = planRoute(zgv, level)
+    if not target then
+        ns.say("There is no following guide to compare with.")
+        return
+    end
+    local todo, dropped = analyze(zgv, skipped, future)
+    showWindow(zgv, level, target, todo, dropped, true)
 end
 
 function ns.ResetGuideCheck()
