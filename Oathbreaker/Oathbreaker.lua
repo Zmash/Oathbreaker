@@ -891,7 +891,10 @@ end
 -- Zygor only skips a step whose quest goals are all impossible while it is already
 -- fast-forwarding, and a "talk to" goal in the same step can keep it open. Skip such
 -- steps ourselves, but only moving forward (going back stays possible).
-local SKIPPABLE_ACTIONS = { talk = true, ["goto"] = true, gossip = true, text = true, accept = true, turnin = true }
+local SKIPPABLE_ACTIONS = {
+    talk = true, ["goto"] = true, gossip = true, text = true, accept = true, turnin = true,
+    kill = true, collect = true, click = true, -- only count while a goal with a quest id is in the step
+}
 local lastGuide, lastNum, movingForward
 
 function ns.SkipImpossibleStep(zgv)
@@ -908,7 +911,7 @@ function ns.SkipImpossibleStep(zgv)
         local action = goal.action
         if action then
             if not SKIPPABLE_ACTIONS[action] then return end
-            if action == "accept" or action == "turnin" then
+            if goal.questid then
                 questGoals = questGoals + 1
                 local complete, possible = goal:IsComplete()
                 if complete or possible then return end

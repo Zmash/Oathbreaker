@@ -157,7 +157,7 @@ lua.execute("""
 local t=NS.settingsFrame.toggles.smartSkip; t.scripts.OnClick(t)
 skipped=0
 function ZGV:SkipStep() skipped=skipped+1 end
-local function g(a,c,p) return {action=a,IsComplete=function() return c,p end} end
+local function g(a,c,p) return {action=a,questid=(a=='turnin' or a=='accept') and 1 or nil,IsComplete=function() return c,p end} end
 function mk(n,...) return {num=n,goals={...}} end
 stepTalkTurnin=function(n) return mk(n,g('talk'),g('turnin',false,false),{tooltip='tip'}) end
 """)
@@ -165,12 +165,15 @@ run=lua.eval("function(step) ZGV.CurrentStep=step; NS.SkipImpossibleStep(ZGV); r
 lua.execute("ZGV.CurrentGuide=g1")
 ok(run(lua.eval("stepTalkTurnin(14)"))==1,'Schritt: Talk + unmoegliche Abgabe wird uebersprungen')
 ok(run(lua.eval("stepTalkTurnin(14)"))==2,'Schritt: wird weiter geprueft, bis Zygor wechselt')
-ok(run(lua.eval("mk(15,{action='talk'},{action='accept',IsComplete=function() return false,true end})"))==2,'Schritt: moegliche Annahme bleibt')
-ok(run(lua.eval("mk(16,{action='kill'},{action='turnin',IsComplete=function() return false,false end})"))==2,'Schritt: andere Ziele (kill) bleiben')
-ok(run(lua.eval("stepTalkTurnin(10)"))==2,'Schritt: rueckwaerts (zurueck geklickt) wird nicht uebersprungen')
-ok(run(lua.eval("stepTalkTurnin(17)"))==3,'Schritt: wieder vorwaerts')
+ok(run(lua.eval("mk(15,{action='talk'},{action='accept',questid=1,IsComplete=function() return false,true end})"))==2,'Schritt: moegliche Annahme bleibt')
+ok(run(lua.eval("mk(16,{action='use'},{action='turnin',questid=1,IsComplete=function() return false,false end})"))==2,'Schritt: andere Ziele (use) bleiben')
+ok(run(lua.eval("mk(19,{action='kill'},{action='collect',questid=1066,IsComplete=function() return false,false end})"))==3,'Schritt: Kill ohne Quest + unmoegliches Sammelziel wird uebersprungen')
+ok(run(lua.eval("mk(20,{action='kill'},{action='collect'})"))==3,'Schritt: ohne Quest-Ziel nie uebersprungen')
+ok(run(lua.eval("mk(21,{action='kill'},{action='collect',questid=1066,IsComplete=function() return false,true end})"))==3,'Schritt: moegliches Sammelziel bleibt')
+ok(run(lua.eval("stepTalkTurnin(10)"))==3,'Schritt: rueckwaerts (zurueck geklickt) wird nicht uebersprungen')
+ok(run(lua.eval("stepTalkTurnin(17)"))==4,'Schritt: wieder vorwaerts')
 lua.execute("local t=NS.settingsFrame.toggles.smartSkip; t.scripts.OnClick(t)")
-ok(run(lua.eval("stepTalkTurnin(18)"))==3,'Schritt: Smart Skip aus = nichts')
+ok(run(lua.eval("stepTalkTurnin(18)"))==4,'Schritt: Smart Skip aus = nichts')
 
 # Bewertungsfenster von Zygor
 ok(lua.eval("ZGV.db.profile.ratings") is False,'Bewertung: beim Login ausgeschaltet (Standard)')

@@ -57,3 +57,5 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 - Schritt-Skipper (`ns.SkipImpossibleStep`, 2.11.3): Zygor überspringt Schritte mit nur unmöglichen Quest-Zielen nur im `fastforward`, ein Talk-Ziel hält den Schritt zusätzlich offen. Der Skipper hängt an `TryToCompleteStep`, überspringt nur vorwärts und nur Schritte aus talk/goto/gossip/text/accept/turnin mit mindestens einem unmöglichen Quest-Ziel. Im Spiel noch ungeprüft.
 
 - Bewertungsfenster (`skipRating`, 2.11.4, Standard an): setzt `ZGV.db.profile.ratings = false`. Dann ruft Zygors `GuideRating:ShowGuideRating` direkt `NextRatingGuide` auf und wechselt ohne Umfrage zur nächsten Guide. Schalter aus stellt `ratings` auf true zurück. Im Spiel noch ungeprüft.
+
+- Schritt-Skipper seit 2.11.5: kill/collect/click zählen mit, solange mindestens ein Ziel eine Quest-ID hat und alle Quest-Ziele unmöglich sind (Zygor hängt "kill X" oft ohne `|q` an ein `collect ... |q`). Im Spiel noch ungeprüft.
