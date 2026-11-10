@@ -61,3 +61,5 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 - Schritt-Skipper seit 2.11.5: kill/collect/click zählen mit, solange mindestens ein Ziel eine Quest-ID hat und alle Quest-Ziele unmöglich sind (Zygor hängt "kill X" oft ohne `|q` an ein `collect ... |q`). Im Spiel noch ungeprüft.
 
 - 2.11.6: Zygor setzt bei `collect` intern `goal.action = "get"` (`cmd` bleibt "collect"); der Skipper kennt deshalb `get`. Im Spiel noch ungeprüft.
+
+- 2.11.7: Ein laufender Side-Quest-Umweg (`detour`) zählt nur Stopps von Guides, die noch in `db.sideGuides` stehen und solange `db.sideQuests` an ist (`stop.guideTitle`). Guide abwählen beendet den Umweg sofort, vorher blieb der Pfeil bis /reload auf der alten Quest. Im Spiel noch ungeprüft.

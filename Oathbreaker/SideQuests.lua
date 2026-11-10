@@ -91,6 +91,7 @@ end
 local function stopsOf(zgv, guide)
     if not stopsByGuide[guide] then
         stopsByGuide[guide] = type(guide.rawdata) == "string" and parseStops(zgv, guide.rawdata) or {}
+        for _, stop in ipairs(stopsByGuide[guide]) do stop.guideTitle = guide.title end
     end
     return stopsByGuide[guide]
 end
@@ -288,9 +289,10 @@ function ns.UpdateSideDetour(zgv, px, py, instance)
     local first = detour.stops[1]
     local distance = first.instance == instance and zgv.HBD:GetWorldDistance(instance, px, py, first.wx, first.wy)
     local leftBehind = not distance or distance > LEFT_BEHIND_YARDS
-    local stillOpen = false
+    -- only stops of guides that are still taken along count (and only while side quests are on)
+    local db, stillOpen = ns.GetDB(), false
     for _, stop in ipairs(detour.stops) do
-        if isDoable(zgv, stop) then stillOpen = true end
+        if db.sideQuests and db.sideGuides[stop.guideTitle] and isDoable(zgv, stop) then stillOpen = true end
     end
     if leftBehind or not stillOpen then ns.EndSideDetour() end
 end
@@ -400,6 +402,7 @@ function ns.ToggleSideGuide(title)
     local db = ns.GetDB()
     if db.sideGuides[title] then
         db.sideGuides[title] = nil
+        if detour and detour.stops[1].guideTitle == title then ns.EndSideDetour() end
         refreshPicker()
     else
         ns.AddSideGuide(title)
