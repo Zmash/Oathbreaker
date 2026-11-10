@@ -63,3 +63,5 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 - 2.11.6: Zygor setzt bei `collect` intern `goal.action = "get"` (`cmd` bleibt "collect"); der Skipper kennt deshalb `get`. Im Spiel noch ungeprüft.
 
 - 2.11.7: Ein laufender Side-Quest-Umweg (`detour`) zählt nur Stopps von Guides, die noch in `db.sideGuides` stehen und solange `db.sideQuests` an ist (`stop.guideTitle`). Guide abwählen beendet den Umweg sofort, vorher blieb der Pfeil bis /reload auf der alten Quest. Im Spiel noch ungeprüft.
+
+- 2.11.8: Zygor löscht manuelle Pfeile bei jedem `ZGV_STEP_CHANGED` (Pointer.lua:138). Der Side-Quest-Umweg setzt seinen Pfeil deshalb selbst wieder (`ns.SetWaypoint`, höchstens `MAX_REASSERTS` = 5 je Umweg, damit ein bewusst gewählter Zygor-Schritt gewinnt). Eine fehlgeschlagene Positionsmessung beendet den Umweg nicht mehr, erst zwei in Folge. Im Spiel noch ungeprüft.

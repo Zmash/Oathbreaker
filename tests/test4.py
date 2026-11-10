@@ -104,6 +104,17 @@ lua.execute(r'NS.ToggleSideGuide("DUNGEONS\\Side Quests"); scan_(); toastF=(func
 lua.execute(r'OathbreakerDB.sideGuides["DUNGEONS\\Side Quests"]=nil'); scan()
 ok(lua.eval("cleared")==lua.eval("cleared0")+1,'Guide anders entfernt: naechster Scan beendet den Umweg')
 lua.execute(r'OathbreakerDB.sideGuides["DUNGEONS\\Side Quests"]=true; OathbreakerDB.hinted={}')
+# Zygor ersetzt den Pfeil (Schrittwechsel): der Umweg setzt ihn wieder, aber nur begrenzt oft
+lua.execute("scan_(); toastF=(function() for _,f in ipairs(frames) do if rawget(f,'hint') then return f end end end)(); wp=nil; toastF.scripts.OnClick(toastF); ZGV.Pointer.DestinationWaypoint={title='Zygor Schritt'}; wp=nil; setCount=0")
+lua.execute("old=ZGV.Pointer.SetWaypoint; ZGV.Pointer.SetWaypoint=function(...) setCount=setCount+1; ZGV.Pointer.DestinationWaypoint={title='Zygor Schritt'}; return old(...) end")
+for _ in range(8): scan()
+ok(lua.eval("setCount")==5,'Pfeil ersetzt: hoechstens 5 Mal zurueckgesetzt, war '+str(lua.eval("setCount")))
+lua.execute("ZGV.Pointer.SetWaypoint=old; ZGV.Pointer.DestinationWaypoint=nil; NS.EndSideDetour()")
+# Eine fehlgeschlagene Positionsmessung beendet den Umweg nicht
+lua.execute("scan_(); toastF=(function() for _,f in ipairs(frames) do if rawget(f,'hint') then return f end end end)(); toastF.scripts.OnClick(toastF); cleared0=cleared; realDist=ZGV.HBD.GetWorldDistance; ZGV.HBD.GetWorldDistance=function(s,i,a,b,c,d) if failReads then return nil end return realDist(s,i,a,b,c,d) end; failReads=true")
+scan(); ok(lua.eval("cleared")==lua.eval("cleared0"),'Eine Fehlmessung: Umweg bleibt')
+scan(); ok(lua.eval("cleared")==lua.eval("cleared0")+1,'Zwei Fehlmessungen in Folge: Umweg endet')
+lua.execute("failReads=false; ZGV.HBD.GetWorldDistance=realDist; OathbreakerDB.hinted={}")
 # Umweg
 lua.execute(r'''function wayAt(x) ZGV.Pointer.DestinationWaypoint={m=1413,x=x,y=0.5} end''')
 lua.execute("px,py=4800,5000; wayAt(0.55)"); scan(); t=toast(); ok(t.shown is True and 'on your way' in t.detail.text,'Auf dem Weg: '+t.detail.text)

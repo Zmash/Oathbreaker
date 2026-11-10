@@ -280,13 +280,18 @@ end
 -------------------------------------------------------------------------------
 local TOAST_BASE_H, TOAST_ROW_H = 58, 22
 
-local function goTo(target, hint)
+local function setWaypoint(target)
     local pointer = _G.ZGV.Pointer
     pointer:SetWaypoint(target.map, target.x, target.y, {
         title = target.waypoint, type = "manual", cleartype = true, icon = pointer.Icons.greendotbig,
         onminimap = "always", overworld = true, showonedge = true,
     })
-    if hint.onClick then hint.onClick(hint) end
+end
+ns.SetWaypoint = setWaypoint
+
+local function goTo(target, hint)
+    setWaypoint(target)
+    if hint.onClick then hint.onClick(hint, target) end
 end
 
 -- Blizzard's own quest marker; falls back to our icon if the client lacks the atlas

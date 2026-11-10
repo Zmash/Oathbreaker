@@ -16,7 +16,7 @@ function ns.ChangeSideRadius(direction)
     db.sideRadius = math.max(MIN_RADIUS, math.min(MAX_RADIUS, ns.SideRadius() + direction * RADIUS_STEP))
     return db.sideRadius
 end
-local SAME_NPC_YARDS, LEFT_BEHIND_YARDS = 15, 700
+local SAME_NPC_YARDS, LEFT_BEHIND_YARDS, MAX_REASSERTS = 15, 700, 5
 local PICKER_WIDTH, PICKER_HEIGHT, PICKER_TOP, PICKER_ROW_H = 420, 480, 64, 32
 
 local stopsByGuide = {}
@@ -272,8 +272,9 @@ end
 -------------------------------------------------------------------------------
 -- Detour: Zygor's arrow goes back to the guide once the stop is dealt with
 -------------------------------------------------------------------------------
-function ns.StartSideDetour(hint)
+function ns.StartSideDetour(hint, target)
     detour = hint
+    detour.target, detour.reasserts, detour.misses = target or hint, 0, 0
 end
 
 function ns.EndSideDetour()
@@ -288,13 +289,22 @@ function ns.UpdateSideDetour(zgv, px, py, instance)
     if not detour then return end
     local first = detour.stops[1]
     local distance = first.instance == instance and zgv.HBD:GetWorldDistance(instance, px, py, first.wx, first.wy)
-    local leftBehind = not distance or distance > LEFT_BEHIND_YARDS
+    -- a single failed position read is no reason to give up, being far away is
+    detour.misses = distance and 0 or detour.misses + 1
+    local leftBehind = detour.misses >= 2 or (distance and distance > LEFT_BEHIND_YARDS)
     -- only stops of guides that are still taken along count (and only while side quests are on)
     local db, stillOpen = ns.GetDB(), false
     for _, stop in ipairs(detour.stops) do
         if db.sideQuests and db.sideGuides[stop.guideTitle] and isDoable(zgv, stop) then stillOpen = true end
     end
-    if leftBehind or not stillOpen then ns.EndSideDetour() end
+    if leftBehind or not stillOpen then return ns.EndSideDetour() end
+    -- Zygor clears manual arrows whenever its step changes: put ours back (a few times only,
+    -- so choosing another Zygor step on purpose still wins)
+    local way, target = zgv.Pointer.DestinationWaypoint, detour.target
+    if ns.SetWaypoint and target and detour.reasserts < MAX_REASSERTS and not (way and way.title == target.waypoint) then
+        detour.reasserts = detour.reasserts + 1
+        ns.SetWaypoint(target)
+    end
 end
 
 -------------------------------------------------------------------------------
