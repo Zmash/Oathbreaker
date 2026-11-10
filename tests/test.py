@@ -170,10 +170,11 @@ ok(run(lua.eval("mk(16,{action='use'},{action='turnin',questid=1,IsComplete=func
 ok(run(lua.eval("mk(19,{action='kill'},{action='collect',questid=1066,IsComplete=function() return false,false end})"))==3,'Schritt: Kill ohne Quest + unmoegliches Sammelziel wird uebersprungen')
 ok(run(lua.eval("mk(20,{action='kill'},{action='collect'})"))==3,'Schritt: ohne Quest-Ziel nie uebersprungen')
 ok(run(lua.eval("mk(21,{action='kill'},{action='collect',questid=1066,IsComplete=function() return false,true end})"))==3,'Schritt: moegliches Sammelziel bleibt')
-ok(run(lua.eval("stepTalkTurnin(10)"))==3,'Schritt: rueckwaerts (zurueck geklickt) wird nicht uebersprungen')
-ok(run(lua.eval("stepTalkTurnin(17)"))==4,'Schritt: wieder vorwaerts')
+ok(run(lua.eval("mk(22,{action='kill'},{action='get',cmd='collect',questid=1066,IsComplete=function() return false,false end})"))==4,'Schritt: collect ist bei Zygor die Aktion get')
+ok(run(lua.eval("stepTalkTurnin(10)"))==4,'Schritt: rueckwaerts (zurueck geklickt) wird nicht uebersprungen')
+ok(run(lua.eval("stepTalkTurnin(17)"))==5,'Schritt: wieder vorwaerts')
 lua.execute("local t=NS.settingsFrame.toggles.smartSkip; t.scripts.OnClick(t)")
-ok(run(lua.eval("stepTalkTurnin(18)"))==4,'Schritt: Smart Skip aus = nichts')
+ok(run(lua.eval("stepTalkTurnin(18)"))==5,'Schritt: Smart Skip aus = nichts')
 
 # Bewertungsfenster von Zygor
 ok(lua.eval("ZGV.db.profile.ratings") is False,'Bewertung: beim Login ausgeschaltet (Standard)')

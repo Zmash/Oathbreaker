@@ -59,3 +59,5 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 - Bewertungsfenster (`skipRating`, 2.11.4, Standard an): setzt `ZGV.db.profile.ratings = false`. Dann ruft Zygors `GuideRating:ShowGuideRating` direkt `NextRatingGuide` auf und wechselt ohne Umfrage zur nächsten Guide. Schalter aus stellt `ratings` auf true zurück. Im Spiel noch ungeprüft.
 
 - Schritt-Skipper seit 2.11.5: kill/collect/click zählen mit, solange mindestens ein Ziel eine Quest-ID hat und alle Quest-Ziele unmöglich sind (Zygor hängt "kill X" oft ohne `|q` an ein `collect ... |q`). Im Spiel noch ungeprüft.
+
+- 2.11.6: Zygor setzt bei `collect` intern `goal.action = "get"` (`cmd` bleibt "collect"); der Skipper kennt deshalb `get`. Im Spiel noch ungeprüft.

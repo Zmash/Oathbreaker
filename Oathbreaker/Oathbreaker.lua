@@ -893,7 +893,7 @@ end
 -- steps ourselves, but only moving forward (going back stays possible).
 local SKIPPABLE_ACTIONS = {
     talk = true, ["goto"] = true, gossip = true, text = true, accept = true, turnin = true,
-    kill = true, collect = true, click = true, -- only count while a goal with a quest id is in the step
+    kill = true, collect = true, get = true, click = true, -- Zygor turns "collect" into action "get"; only these count while a goal with a quest id is in the step
 }
 local lastGuide, lastNum, movingForward
 
