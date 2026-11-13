@@ -66,6 +66,34 @@ ok(rows()==[('Do','One',1),('Do','Three',1),('Accept','Four',1)],'Kette mit Vorq
 ok('Filler' not in str(rows()) and 'Both' not in str(rows()),'Unnoetiges und spaeter annehmbares raus')
 lua.execute("completed[1]=true"); ok(rows()==[('Do','Three',1),('Accept','Four',1)],'Erledigte fallen raus'); lua.execute("completed[1]=nil")
 lua.execute("inlog[3]=true"); ok(rows()[0][:2]==('Finish','Three'),'Im Log: fertig machen'); lua.execute("ready[3]=true"); ok(rows()[0][:2]==('Turn in','Three'),'Fertig: abgeben'); lua.execute("inlog[3]=nil; ready[3]=nil")
+# Fertige Quests, deren Abgabe in einem uebersprungenen Guide liegt
+def handin():
+    lua.execute('an()'); n=lua.eval('#handIn')
+    return [lua.eval('handIn[%d].title'%i) for i in range(1,n+1)]
+lua.execute(r'''rawA,rawB=gA.rawdata,gB.rawdata; gA.rawdata=rawA..[[
+step
+turnin Done##60 |goto X 1,1
+step
+turnin Mid##61 |goto X 1,1
+step
+turnin Wait##62 |goto X 1,1
+]]; gB.rawdata=rawB..[[
+step
+turnin Wait##62 |goto Y 1,1
+]]; NS.SideQuests.Reset()''')
+lua.execute('function an() local t,s,f=NS.GuideCheck.PlanRoute(ZGV,plevel); todo,dropped,handIn=NS.GuideCheck.Analyze(ZGV,s,f) end')
+ok(handin()==[],'Abgabe: nichts fertig, nichts gelistet')
+lua.execute("inlog[60]=true; ready[60]=true; inlog[62]=true; ready[62]=true"); ok(handin()==['Done'],'Abgabe: fertige Quest aus uebersprungenem Guide, spaetere Abgabe ausgeblendet')
+lua.execute("inlog[61]=true"); ok(handin()==['Done'],'Abgabe: Quest im Log, aber nicht fertig, fehlt')
+lua.execute("completed[60]=true"); ok(handin()==[],'Abgabe: schon abgegeben, fehlt'); lua.execute("completed[60]=nil")
+lua.execute("ready[61]=true"); ok(handin()==['Done','Mid'],'Abgabe: Reihenfolge nach Guide-Schritt')
+lua.execute("NS.ResetGuideCheck(); NS.CheckGuide(ZGV); for _,f in ipairs(frames) do if rawget(f,'stay') then gcw=f end end")
+ok(lua.eval('gcw.shown') is True and 'Done' in lua.eval('gcw.rows[#todo+1].label.text') and 'Turn in' in lua.eval('gcw.rows[#todo+1].label.text'),'Abgabe: Zeile im Fenster nach den Pflichtquests')
+lua.execute("focused=nil; gcw.rows[#todo+1].scripts.OnClick(gcw.rows[#todo+1])"); ok(lua.eval('gcw.shown') is True,'Abgabe: Klick laesst Fenster offen')
+lua.execute("completed[60]=true; gcw.scripts.OnUpdate(gcw,1.1)"); ok('handed in' in lua.eval('gcw.rows[#todo+1].note.text'),'Abgabe: erledigte Zeile wird grau'); ok('handed in' not in lua.eval('gcw.rows[#todo+2].note.text'),'Abgabe: andere Zeile bleibt'); lua.execute("completed[60]=nil")
+lua.execute("gcw.rows[1].scripts.OnClick(gcw.rows[1])"); ok(lua.eval('gcw.shown') is False,'Pflichtquest: Klick schliesst Fenster')
+lua.execute("gcw:Hide(); gcw.shown=false; inlog[60]=nil; ready[60]=nil; inlog[61]=nil; ready[61]=nil; inlog[62]=nil; ready[62]=nil; NS.ResetGuideCheck()")
+lua.execute('gA.rawdata,gB.rawdata=rawA,rawB; NS.SideQuests.Reset()')
 # lange Kette
 lua.execute(r'''gA.rawdata=gA.rawdata..[[
 step

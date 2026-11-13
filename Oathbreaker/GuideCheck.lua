@@ -6,6 +6,7 @@ local LEVELS_OVER = 2
 local LOOKAHEAD_GUIDES = 3
 local MAX_TODO = 5
 local MAX_QUESTS_PER_UNLOCK = 3
+local MAX_HAND_IN = 8
 local CHECK_EVERY_SCANS = 30
 local WINDOW_WIDTH, WINDOW_BASE_H, ROW_H = 470, 142, 24
 local ACTION_COLORS = {
@@ -175,7 +176,7 @@ local function actionFor(id, isLaterTurnin, facts)
 end
 
 local function analyze(zgv, skipped, future)
-    local skippedAccepts = collectStops(zgv, skipped)
+    local skippedAccepts, skippedTurnins = collectStops(zgv, skipped)
     local futureAccepts, futureTurnins, futureList = collectStops(zgv, future)
     local facts = { skippedAccepts = skippedAccepts, futureAccepts = futureAccepts, neededAsPrereq = {} }
     function facts.isSkippedOnly(id)
@@ -227,15 +228,41 @@ local function analyze(zgv, skipped, future)
         }
     end
     table.sort(todo, function(a, b) return a.order < b.order end)
-    return todo, dropped
+
+    -- Finished quests whose turn-in sits in a guide you would skip, unless a later guide hands them in
+    local listed, handIn = {}, {}
+    for _, item in ipairs(todo) do listed[item.id] = true end
+    for id, entry in pairs(skippedTurnins) do
+        if not listed[id] and not futureTurnins[id] and not isDone(id) and isReady(id) then
+            handIn[#handIn + 1] = {
+                id = id, title = entry.stop.title, guide = entry.guide, order = entry.order,
+                action = "Turn in", stage = "turnin", handIn = true,
+            }
+        end
+    end
+    table.sort(handIn, function(a, b) return a.order < b.order end)
+    for index = MAX_HAND_IN + 1, #handIn do handIn[index] = nil end
+    return todo, dropped, handIn
 end
 
 -------------------------------------------------------------------------------
 -- Window
 -------------------------------------------------------------------------------
 local function usefulness(entry)
+    if entry.handIn then return "done, hand in here" end
     if entry.onlyLater then return "turned in later" end
     return ("needed for %d %s"):format(entry.count, entry.count == 1 and "quest" or "quests")
+end
+
+local function paintRow(row)
+    local entry = row.entry
+    if entry.handIn and isDone(entry.id) then
+        row.label:SetText(("|cff808080Turn in  %s|r"):format(entry.title))
+        row.note:SetText("handed in")
+    else
+        row.label:SetText(("%s%s|r  %s"):format(ACTION_COLORS[entry.action], entry.action, entry.title))
+        row.note:SetText(usefulness(entry))
+    end
 end
 
 local function createRow(parent, index)
@@ -254,7 +281,8 @@ local function createRow(parent, index)
     row:SetScript("OnEnter", function(self) self.hover:Show() end)
     row:SetScript("OnLeave", function(self) self.hover:Hide() end)
     row:SetScript("OnClick", function(self)
-        window:Hide()
+        -- Hand-ins stay open, you usually have several to walk through
+        if not self.entry.handIn then window:Hide() end
         ns.loadTarget(_G.ZGV, { guide = self.entry.guide, stage = self.entry.stage }, self.entry.id)
     end)
     return row
@@ -296,35 +324,49 @@ local function createWindow()
         ns.GetDB().guideCheckStay[f.current.title] = true
         f:Hide()
     end)
+    -- Greys out hand-ins as you finish them while the window stays open
+    local waited = 0
+    f:SetScript("OnUpdate", function(self, elapsed)
+        waited = waited + elapsed
+        if waited < 1 then return end
+        waited = 0
+        for _, row in ipairs(self.rows) do
+            if row:IsShown() and row.entry and row.entry.handIn then paintRow(row) end
+        end
+    end)
     f:Hide()
     return f
 end
 
-local function noteText(todo, dropped)
+local function noteText(todo, dropped, handIn)
     local text = todo[1] and "Do these first, the next guides depend on them. Click one to go there."
+        or handIn[1] and "Nothing you would skip is needed later, but you can still hand in finished quests. Click one to go there."
         or "Nothing you would skip is needed later."
+    if todo[1] and handIn[1] then text = text .. " Finished quests are listed with them." end
     if dropped > 0 then
         text = text .. (" %d long %s skipped, not worth it."):format(dropped, dropped == 1 and "chain" or "chains")
     end
     return text
 end
 
-local function showWindow(zgv, level, target, todo, dropped, manual)
+local function showWindow(zgv, level, target, todo, dropped, handIn, manual)
+    local list = {}
+    for _, entry in ipairs(todo) do list[#list + 1] = entry end
+    for _, entry in ipairs(handIn) do list[#list + 1] = entry end
     window = window or createWindow()
     window.current, window.target = zgv.CurrentGuide, target
     window.heading:SetText(manual and "Guide check" or "You have outleveled this guide")
     window.summary:SetText(("Level %d in %s. %s: %s"):format(level, shortName(zgv.CurrentGuide), manual and "Next" or "Better", shortName(target)))
-    window.note:SetText(noteText(todo, dropped))
-    for index, entry in ipairs(todo) do
+    window.note:SetText(noteText(todo, dropped, handIn))
+    for index, entry in ipairs(list) do
         window.rows[index] = window.rows[index] or createRow(window, index)
         local row = window.rows[index]
         row.entry = entry
-        row.label:SetText(("%s%s|r  %s"):format(ACTION_COLORS[entry.action], entry.action, entry.title))
-        row.note:SetText(usefulness(entry))
+        paintRow(row)
         row:Show()
     end
-    for index = #todo + 1, #window.rows do window.rows[index]:Hide() end
-    window:SetHeight(WINDOW_BASE_H + #todo * ROW_H)
+    for index = #list + 1, #window.rows do window.rows[index]:Hide() end
+    window:SetHeight(WINDOW_BASE_H + #list * ROW_H)
     ns.paintAccent(window)
     window.switch.Repaint()
     window:Show()
@@ -345,7 +387,7 @@ function ns.CheckGuide(zgv)
 
     local target, skipped, future = planRoute(zgv, level)
     if not target then return end
-    local todo, dropped = analyze(zgv, skipped, future)
+    local todo, dropped, handIn = analyze(zgv, skipped, future)
     if #todo > MAX_TODO then
         if not toldToFinish[guide.title] then
             toldToFinish[guide.title] = true
@@ -354,10 +396,10 @@ function ns.CheckGuide(zgv)
         return
     end
     -- "Later" holds until you level up or finish everything on the list
-    local answer = key .. ":" .. (todo[1] and "open" or "clear")
+    local answer = key .. ":" .. ((todo[1] or handIn[1]) and "open" or "clear")
     if later[answer] then return end
     later[answer] = true
-    showWindow(zgv, level, target, todo, dropped)
+    showWindow(zgv, level, target, todo, dropped, handIn)
 end
 
 -- Button: same comparison, but whatever your level, "Stay here" or "Later", and always an answer
@@ -372,8 +414,8 @@ function ns.CheckGuideNow(zgv)
         ns.say("There is no following guide to compare with.")
         return
     end
-    local todo, dropped = analyze(zgv, skipped, future)
-    showWindow(zgv, level, target, todo, dropped, true)
+    local todo, dropped, handIn = analyze(zgv, skipped, future)
+    showWindow(zgv, level, target, todo, dropped, handIn, true)
 end
 
 function ns.ResetGuideCheck()

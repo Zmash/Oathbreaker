@@ -7,7 +7,7 @@ Zygor-Begleiter für WoW Forever, Zmash gibt ihn über Discord an Freunde weiter
 - `Oathbreaker.lua`: Aufräumliste, Einstellungen, Minimap-Button, Knopf in Zygors Titelleiste, Smart Skip, gemeinsame Helfer
 - `Assistant.lua`: Dungeon-Angebot, Hinweise in der Nähe, Lupe im Questlog mit Questroute
 - `SideQuests.lua`: bis zu 2 Side Guides, Abstecher-Hinweise, Auswahlfenster
-- `Update.lua`: Update-Hinweis: Spieler tauschen ihre Version per Addon-Nachricht (Gilde, Gruppe, verstecktes temporäres Chat-Kanal `OathbreakerSync`). Wer eine neuere hört, bekommt ein Fenster mit kopierbarem Link auf die neueste GitHub-Release-Seite, wer eine ältere hört, antwortet per Flüstern. Schalter „Update notice". Im Spiel noch ungeprüft.
+- `Update.lua`: Update-Hinweis: Spieler tauschen ihre Version per Addon-Nachricht (Gilde, Gruppe, verstecktes temporäres Chat-Kanal `OathbreakerSync`). Wer eine neuere hört, bekommt ein Fenster mit kopierbarem Link auf die neueste GitHub-Release-Seite, wer eine ältere hört, antwortet per Flüstern. Schalter „Update notice". Im Spiel geprüft, funktioniert.
 - `GuideCheck.lua`: Empfehlung des nächsten Leveling-Guides beim Überleveln
 
 Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weiteren Slash-Befehle außer `/oathbreaker`. SavedVariablesPerCharacter: `OathbreakerDB`.
@@ -63,5 +63,7 @@ Einstellungen laufen über das Menü (Rechtsklick aufs Minimap-Icon), keine weit
 - 2.11.6: Zygor setzt bei `collect` intern `goal.action = "get"` (`cmd` bleibt "collect"); der Skipper kennt deshalb `get`. Im Spiel noch ungeprüft.
 
 - 2.11.7: Ein laufender Side-Quest-Umweg (`detour`) zählt nur Stopps von Guides, die noch in `db.sideGuides` stehen und solange `db.sideQuests` an ist (`stop.guideTitle`). Guide abwählen beendet den Umweg sofort, vorher blieb der Pfeil bis /reload auf der alten Quest. Im Spiel noch ungeprüft.
+
+- 2.12.0: Guide Check listet zusätzlich fertige Quests (im Log, Ziele erfüllt), deren Abgabe in einem übersprungenen Guide liegt (`handIn`, dritter Rückgabewert von `Analyze`, höchstens 8, `MAX_HAND_IN`). Quests, die ein folgender Guide (die 3 ab dem Ziel) abgibt, fehlen bewusst. Die Zeilen stehen nach den Pflichtquests, Klick lädt den Guide und springt zum Abgabeschritt (`stage = "turnin"`); das Fenster bleibt dabei offen (mehrere Abgaben nacheinander), die Zeile wird grau („handed in"), sobald die Quest abgegeben ist (1-s-Takt in `OnUpdate`). Pflichtquest-Zeilen schließen das Fenster wie bisher. Die Liste löst allein kein Fenster aus: es kommt nur im üblichen Ablauf (Überlevelt) oder per Knopf, zählt aber für „Later" mit. Im Spiel noch ungeprüft.
 
 - 2.11.8: Zygor löscht manuelle Pfeile bei jedem `ZGV_STEP_CHANGED` (Pointer.lua:138). Der Side-Quest-Umweg setzt seinen Pfeil deshalb selbst wieder (`ns.SetWaypoint`, höchstens `MAX_REASSERTS` = 5 je Umweg, damit ein bewusst gewählter Zygor-Schritt gewinnt). Eine fehlgeschlagene Positionsmessung beendet den Umweg nicht mehr, erst zwei in Folge. Im Spiel noch ungeprüft.
